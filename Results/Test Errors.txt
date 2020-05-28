@@ -1,0 +1,2 @@
+2D poisson (No pre-training; lr = 0.01; 701 parameters): 0.006257457239916442
+2D poisson-hole (No pre-training; lr = 0.01; 465 parameters): 0.008562663888331804
