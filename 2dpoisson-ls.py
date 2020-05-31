@@ -96,7 +96,8 @@ def train(model,device,params,optimizer,scheduler):
 
         # Loss function 2
         output2 = model(data2)
-        loss2 = torch.mean(output2*output2 * 1 * 2*math.pi*params["radius"]) # params["penalty"] = 1
+        target2 = exact(params["radius"],data2)
+        loss2 = torch.mean((output2-target2)*(output2-target2) * params["penalty"] * 2*math.pi*params["radius"])
         loss = loss1+loss2
 
         # if step == 0:
@@ -111,7 +112,7 @@ def train(model,device,params,optimizer,scheduler):
             with torch.no_grad():
                 target = exact(params["radius"],data1)
                 error = errorFun(output1,target,params)
-                print("Error at Step %s is %s."%(step+params["preStep"]+1,error))
+                print("Error at Step %s is %s."%(step+params["preStep"]+1,loss)) # error))
                 # params["penalty"] *= 1.01
             file = open("lossData.txt","a")
             file.write(str(step+params["preStep"]+1)+" "+str(error)+"\n")
@@ -159,17 +160,22 @@ def test(model,device,params):
 
 def ffun(data):
     # f = 4
-    return 4.0*torch.ones([data.shape[0],1],dtype=torch.float)
+    # return 4.0*torch.ones([data.shape[0],1],dtype=torch.float)
+    # f = 0
+    return 0.0*torch.ones([data.shape[0],1],dtype=torch.float)
 
 def exact(r,data):
     # f = 4 ==> u = r^2-x^2-y^2
-    output = r**2-torch.sum(data*data,dim=1)
+    # output = r**2-torch.sum(data*data,dim=1)
+    # f = 0 ==> u = x1*x2
+    output = data[:,0]*data[:,1]
 
     return output.unsqueeze(1)
 
 def rough(r,data):
     # A rough guess
-    output = r**2-r*torch.sum(data*data,dim=1)**0.5
+    # output = r**2-r*torch.sum(data*data,dim=1)**0.5
+    output = torch.zeros(data.shape[0],dtype=torch.float)
     return output.unsqueeze(1)
 
 def count_parameters(model):
@@ -186,13 +192,13 @@ def main():
     params["dd"] = 1 # Scalar field
     params["bodyBatch"] = 1000 # Batch size
     params["bdryBatch"] = 1000 # Batch size for the boundary integral
-    params["lr"] = 0.01 # Learning rate
+    params["lr"] = 0.1 # Learning rate
     params["preLr"] = 0.01 # Learning rate (Pre-training)
     params["width"] = 8 # Width of layers
-    params["depth"] = 4 # Depth of the network: depth+2
+    params["depth"] = 2 # Depth of the network: depth+2
     params["numQuad"] = 40000 # Number of quadrature points for testing
     params["trainStep"] = 50000
-    params["penalty"] = 500
+    params["penalty"] = 1
     params["preStep"] = 0
     params["diff"] = 0.0001
     params["writeStep"] = 50

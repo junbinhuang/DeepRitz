@@ -26,13 +26,13 @@ class RitzNet(torch.nn.Module):
         #     x = x_temp+x
         
         x = F.softplus(self.linearIn(x)) # Match dimension
-        # for layer in self.linear:
-        #     x_temp = F.softplus(layer(x))
+        for layer in self.linear:
+            x_temp = F.softplus(layer(x))
+            x = x_temp #+x
+        # for i in range(len(self.linear)//2): # Use the network structure proposed in the paper.
+        #     x_temp = F.softplus(self.linear[2*i](x))
+        #     x_temp = F.softplus(self.linear[2*i+1](x_temp))
         #     x = x_temp+x
-        for i in range(len(self.linear)//2): # Use the network structure proposed in the paper.
-            x_temp = F.softplus(self.linear[2*i](x))
-            x_temp = F.softplus(self.linear[2*i+1](x_temp))
-            x = x_temp+x
         
         return self.linearOut(x)
 
@@ -183,7 +183,7 @@ def main():
     params["lr"] = 0.01 # Learning rate
     params["preLr"] = 0.01 # Learning rate (Pre-training)
     params["width"] = 8 # Width of layers
-    params["depth"] = 6 # Depth of the network: depth+2
+    params["depth"] = 2 # Depth of the network: depth+2
     params["numQuad"] = 40000 # Number of quadrature points for testing
     params["trainStep"] = 50000
     params["penalty"] = 1000
