@@ -6,7 +6,6 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 import sys, os
 import writeSolution
-from areaVolume import areaVolume
 
 # Network structure
 class RitzNet(torch.nn.Module):
@@ -22,7 +21,12 @@ class RitzNet(torch.nn.Module):
 
     def forward(self, x):
         x = F.softplus(self.linearIn(x)) # Match dimension
-        for layer in self.linear: # Is ResNets really needed?
+        # for layer in self.linear:
+        #     x_temp = F.relu(layer(x))
+        #     x = x_temp+x
+        
+        # x = F.softplus(self.linearIn(x)) # Match dimension
+        for layer in self.linear:
             x_temp = F.softplus(layer(x))
             x = x_temp #+x
         # for i in range(len(self.linear)//2): # Use the network structure proposed in the paper.
@@ -38,14 +42,14 @@ def preTrain(model,device,params,preOptimizer,preScheduler,fun):
 
     for step in range(params["preStep"]):
         # The volume integral
-        data = torch.from_numpy(generateData.sampleFromDisk10(params["radius"],params["bodyBatch"])).float().to(device)
+        data = torch.from_numpy(generateData.sampleFromDisk(params["radius"],params["bodyBatch"])).float().to(device)
 
         output = model(data)
 
         target = fun(params["radius"],data)
 
         loss = output-target
-        loss = torch.mean(loss*loss)
+        loss = torch.mean(loss*loss)*math.pi*params["radius"]**2
 
         if step%params["writeStep"] == params["writeStep"]-1:
             with torch.no_grad():
@@ -64,56 +68,35 @@ def preTrain(model,device,params,preOptimizer,preScheduler,fun):
 def train(model,device,params,optimizer,scheduler):
     model.train()
 
-    data1 = torch.from_numpy(generateData.sampleFromDisk10(params["radius"],params["bodyBatch"])).float().to(device)
-    data2 = torch.from_numpy(generateData.sampleFromSurface10(params["radius"],params["bdryBatch"])).float().to(device)
-    x_shift = torch.from_numpy(np.eye(10)*params["diff"]).float().to(device)
-    data1_shift0 = data1+x_shift[0]
-    data1_shift1 = data1+x_shift[1]
-    data1_shift2 = data1+x_shift[2]
-    data1_shift3 = data1+x_shift[3]
-    data1_shift4 = data1+x_shift[4]
-    data1_shift5 = data1+x_shift[5]
-    data1_shift6 = data1+x_shift[6]
-    data1_shift7 = data1+x_shift[7]
-    data1_shift8 = data1+x_shift[8]
-    data1_shift9 = data1+x_shift[9]
+    data1 = torch.from_numpy(generateData.sampleFromDisk(params["radius"],params["bodyBatch"])).float().to(device)
+    data2 = torch.from_numpy(generateData.sampleFromSurface(params["radius"],params["bdryBatch"])).float().to(device)
+    x_shift = np.array([params["diff"],0.0])
+    y_shift = np.array([0.0,params["diff"]])
+    data1_x_shift = data1+torch.from_numpy(x_shift).float().to(device)
+    data1_y_shift = data1+torch.from_numpy(y_shift).float().to(device)
+    data1_x_nshift = data1-torch.from_numpy(x_shift).float().to(device)
+    data1_y_nshift = data1-torch.from_numpy(y_shift).float().to(device)
 
     for step in range(params["trainStep"]-params["preStep"]):
         output1 = model(data1)
-        output1_shift0 = model(data1_shift0)
-        output1_shift1 = model(data1_shift1)
-        output1_shift2 = model(data1_shift2)
-        output1_shift3 = model(data1_shift3)
-        output1_shift4 = model(data1_shift4)
-        output1_shift5 = model(data1_shift5)
-        output1_shift6 = model(data1_shift6)
-        output1_shift7 = model(data1_shift7)
-        output1_shift8 = model(data1_shift8)
-        output1_shift9 = model(data1_shift9)
+        output1_x_shift = model(data1_x_shift)
+        output1_y_shift = model(data1_y_shift)
+        output1_x_nshift = model(data1_x_nshift)
+        output1_y_nshift = model(data1_y_nshift)
 
-        dfdx0 = (output1_shift0-output1)/params["diff"] # Use difference to approximate derivatives.
-        dfdx1 = (output1_shift1-output1)/params["diff"] # The PyTorch autograd is not very effective in this case.
-        dfdx2 = (output1_shift2-output1)/params["diff"]
-        dfdx3 = (output1_shift3-output1)/params["diff"]
-        dfdx4 = (output1_shift4-output1)/params["diff"]
-        dfdx5 = (output1_shift5-output1)/params["diff"]
-        dfdx6 = (output1_shift6-output1)/params["diff"]
-        dfdx7 = (output1_shift7-output1)/params["diff"]
-        dfdx8 = (output1_shift8-output1)/params["diff"]
-        dfdx9 = (output1_shift9-output1)/params["diff"]
+        # Second order difference
+        dfdx2 = (output1_x_shift+output1_x_nshift-2*output1)/(params["diff"]**2) # Use difference to approximate derivatives.
+        dfdy2 = (output1_y_shift+output1_y_nshift-2*output1)/(params["diff"]**2) # The PyTorch autograd is not very effective in this case.
 
         model.zero_grad()
 
         # Loss function 1
         fTerm = ffun(data1).to(device)
-        loss1 = torch.mean(0.5*(dfdx0*dfdx0 + dfdx1*dfdx1 + dfdx2*dfdx2 +\
-            dfdx3*dfdx3 + dfdx4*dfdx4 + dfdx5*dfdx5 + dfdx6*dfdx6 +\
-                dfdx7*dfdx7 + dfdx8*dfdx8 + dfdx9*dfdx9)-fTerm*output1)
+        loss1 = torch.mean((dfdx2+dfdy2+fTerm)**2) * math.pi*params["radius"]**2
 
         # Loss function 2
         output2 = model(data2)
-        target2 = exact(params["radius"],data2)
-        loss2 = torch.mean((output2-target2)*(output2-target2) * params["penalty"] *params["area"])
+        loss2 = torch.mean(output2*output2 * 1 * 2*math.pi*params["radius"]) # params["penalty"] = 1
         loss = loss1+loss2
 
         # if step == 0:
@@ -133,19 +116,13 @@ def train(model,device,params,optimizer,scheduler):
             file = open("lossData.txt","a")
             file.write(str(step+params["preStep"]+1)+" "+str(error)+"\n")
 
-        data1 = torch.from_numpy(generateData.sampleFromDisk10(params["radius"],params["bodyBatch"])).float().to(device)
-        data2 = torch.from_numpy(generateData.sampleFromSurface10(params["radius"],params["bdryBatch"])).float().to(device)
+            data1 = torch.from_numpy(generateData.sampleFromDisk(params["radius"],params["bodyBatch"])).float().to(device)
+            data2 = torch.from_numpy(generateData.sampleFromSurface(params["radius"],params["bdryBatch"])).float().to(device)
 
-        data1_shift0 = data1+x_shift[0]
-        data1_shift1 = data1+x_shift[1]
-        data1_shift2 = data1+x_shift[2]
-        data1_shift3 = data1+x_shift[3]
-        data1_shift4 = data1+x_shift[4]
-        data1_shift5 = data1+x_shift[5]
-        data1_shift6 = data1+x_shift[6]
-        data1_shift7 = data1+x_shift[7]
-        data1_shift8 = data1+x_shift[8]
-        data1_shift9 = data1+x_shift[9]
+            data1_x_shift = data1+torch.from_numpy(x_shift).float().to(device)
+            data1_y_shift = data1+torch.from_numpy(y_shift).float().to(device)
+            data1_x_nshift = data1-torch.from_numpy(x_shift).float().to(device)
+            data1_y_nshift = data1-torch.from_numpy(y_shift).float().to(device)
 
         loss.backward()
 
@@ -158,45 +135,41 @@ def train(model,device,params,optimizer,scheduler):
         #     params["bodyBatch"] *= 2
 
         optimizer.step()
-        scheduler.step()
+        scheduler.step()      
 
 def errorFun(output,target,params):
     error = output-target
-    error = math.sqrt(torch.mean(error*error))
+    error = math.sqrt(torch.mean(error*error)*math.pi*params["radius"]**2)
     # Calculate the L2 norm error.
-    ref = math.sqrt(torch.mean(target*target))
+    ref = math.sqrt(torch.mean(target*target)*math.pi*params["radius"]**2)
     return error/ref   
 
 def test(model,device,params):
     numQuad = params["numQuad"]
 
-    data = torch.from_numpy(generateData.sampleFromDisk10(1,numQuad)).float().to(device)
+    data = torch.from_numpy(generateData.sampleFromDisk(1,numQuad)).float().to(device)
     output = model(data)
     target = exact(params["radius"],data).to(device)
 
     error = output-target
-    error = math.sqrt(torch.mean(error*error))
+    error = math.sqrt(torch.mean(error*error)*math.pi*params["radius"]**2)
     # Calculate the L2 norm error.
-    ref = math.sqrt(torch.mean(target*target))
+    ref = math.sqrt(torch.mean(target*target)*math.pi*params["radius"]**2)
     return error/ref
 
 def ffun(data):
-    # f = 0
-    return 0.0*torch.ones([data.shape[0],1],dtype=torch.float)
-    # f = 20
-    # return 20.0*torch.ones([data.shape[0],1],dtype=torch.float)
+    # f = 4
+    return 4.0*torch.ones([data.shape[0],1],dtype=torch.float)
 
 def exact(r,data):
-    # f = 20 ==> u = r^2-x^2-y^2-...
-    # output = r**2-torch.sum(data*data,dim=1)
-    # f = 0 ==> u = x1x2+x3x4+x5x6+...
-    output = data[:,0]*data[:,1] + data[:,2]*data[:,3] + data[:,4]*data[:,5] + \
-        data[:,6]*data[:,7] + data[:,8]*data[:,9]
+    # f = 4 ==> u = r^2-x^2-y^2
+    output = r**2-torch.sum(data*data,dim=1)
+
     return output.unsqueeze(1)
 
 def rough(r,data):
-    # output = r**2-r*torch.sum(data*data,dim=1)**0.5
-    output = torch.zeros(data.shape[0],dtype=torch.float)
+    # A rough guess
+    output = r**2-r*torch.sum(data*data,dim=1)**0.5
     return output.unsqueeze(1)
 
 def count_parameters(model):
@@ -209,21 +182,20 @@ def main():
 
     params = dict()
     params["radius"] = 1
-    params["d"] = 10 # 10D
+    params["d"] = 2 # 2D
     params["dd"] = 1 # Scalar field
-    params["bodyBatch"] = 100 # Batch size
-    params["bdryBatch"] = 100 # Batch size for the boundary integral
+    params["bodyBatch"] = 1000 # Batch size
+    params["bdryBatch"] = 1000 # Batch size for the boundary integral
     params["lr"] = 0.01 # Learning rate
     params["preLr"] = 0.01 # Learning rate (Pre-training)
-    params["width"] = 10 # Width of layers
+    params["width"] = 8 # Width of layers
     params["depth"] = 4 # Depth of the network: depth+2
     params["numQuad"] = 40000 # Number of quadrature points for testing
     params["trainStep"] = 50000
-    params["penalty"] = 1000
+    params["penalty"] = 500
     params["preStep"] = 0
     params["diff"] = 0.0001
     params["writeStep"] = 50
-    params["area"] = areaVolume(params["radius"],params["d"])
     params["step_size"] = 5000
     params["gamma"] = 0.3
 
@@ -252,6 +224,32 @@ def main():
 
     # testError = test(model,device,params)
     # print("The test error (of the saved model) is %s."%testError)
+
+    pltResult(model,device,100,params)
+
+def pltResult(model,device,nSample,params):
+    rList = np.linspace(0,params["radius"],nSample)
+    thetaList = np.linspace(0,math.pi*2,nSample)
+
+    xx = np.zeros([nSample,nSample])
+    yy = np.zeros([nSample,nSample])
+    zz = np.zeros([nSample,nSample])
+    for i in range(nSample):
+        for j in range(nSample):
+            xx[i,j] = rList[i]*math.cos(thetaList[j])
+            yy[i,j] = rList[i]*math.sin(thetaList[j])
+            coord = np.array([xx[i,j],yy[i,j]])
+            zz[i,j] = model(torch.from_numpy(coord).float().to(device)).item()
+            # zz[i,j] = params["radius"]**2-xx[i,j]**2-yy[i,j]**2 # Plot the exact solution.
+    
+    file = open("nSample.txt","w")
+    file.write(str(nSample))
+
+    file = open("Data.txt","w")
+    writeSolution.write(xx,yy,zz,nSample,file)
+
+    edgeList = [[params["radius"]*math.cos(i),params["radius"]*math.sin(i)] for i in thetaList]
+    writeSolution.writeBoundary(edgeList)
 
 if __name__=="__main__":
     main()

@@ -25,7 +25,7 @@ class RitzNet(torch.nn.Module):
         #     x_temp = F.relu(layer(x))
         #     x = x_temp+x
         
-        x = self.linearIn(x) # Match dimension
+        x = F.softplus(self.linearIn(x)) # Match dimension
         # for layer in self.linear:
         #     x_temp = F.softplus(layer(x))
         #     x = x_temp+x
@@ -154,7 +154,7 @@ def test(model,device,params):
 
 def ffun(data):
     # f = 0.0
-    return 0.0*torch.ones(data.shape[0],dtype=torch.float)
+    return 0.0*torch.ones([data.shape[0],1],dtype=torch.float)
 
 def exact(data):
     # f = 0 ==> u = xy
@@ -213,7 +213,7 @@ def main():
     torch.save(model.state_dict(),"last_model.pt")
 
     # model = RitzNet(params).to(device)
-    # model.load_state_dict(torch.load("best_model.pt"))
+    # model.load_state_dict(torch.load("last_model.pt"))
     # model.eval()
 
     # testError = test(model,device,params)
