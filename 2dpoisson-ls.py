@@ -70,12 +70,14 @@ def train(model,device,params,optimizer,scheduler):
 
     data1 = torch.from_numpy(generateData.sampleFromDisk(params["radius"],params["bodyBatch"])).float().to(device)
     data2 = torch.from_numpy(generateData.sampleFromSurface(params["radius"],params["bdryBatch"])).float().to(device)
-    x_shift = np.array([params["diff"],0.0])
-    y_shift = np.array([0.0,params["diff"]])
-    data1_x_shift = data1+torch.from_numpy(x_shift).float().to(device)
-    data1_y_shift = data1+torch.from_numpy(y_shift).float().to(device)
-    data1_x_nshift = data1-torch.from_numpy(x_shift).float().to(device)
-    data1_y_nshift = data1-torch.from_numpy(y_shift).float().to(device)
+
+    x_shift = torch.from_numpy(np.array([params["diff"],0.0])).float().to(device)
+    y_shift = torch.from_numpy(np.array([0.0,params["diff"]])).float().to(device)
+
+    data1_x_shift = data1+x_shift
+    data1_y_shift = data1+y_shift
+    data1_x_nshift = data1-x_shift
+    data1_y_nshift = data1-y_shift
 
     for step in range(params["trainStep"]-params["preStep"]):
         output1 = model(data1)
@@ -120,10 +122,10 @@ def train(model,device,params,optimizer,scheduler):
             data1 = torch.from_numpy(generateData.sampleFromDisk(params["radius"],params["bodyBatch"])).float().to(device)
             data2 = torch.from_numpy(generateData.sampleFromSurface(params["radius"],params["bdryBatch"])).float().to(device)
 
-            data1_x_shift = data1+torch.from_numpy(x_shift).float().to(device)
-            data1_y_shift = data1+torch.from_numpy(y_shift).float().to(device)
-            data1_x_nshift = data1-torch.from_numpy(x_shift).float().to(device)
-            data1_y_nshift = data1-torch.from_numpy(y_shift).float().to(device)
+            data1_x_shift = data1+x_shift
+            data1_y_shift = data1+y_shift
+            data1_x_nshift = data1-x_shift
+            data1_y_nshift = data1-y_shift
 
         loss.backward()
 
