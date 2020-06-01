@@ -113,11 +113,11 @@ def train(model,device,params,optimizer,scheduler):
             file = open("lossData.txt","a")
             file.write(str(step+params["preStep"]+1)+" "+str(error)+"\n")
 
-            data1 = torch.from_numpy(generateData.sampleFromDomain(params["bodyBatch"])).float().to(device)
-            data2 = torch.from_numpy(generateData.sampleFromBoundary(params["bdryBatch"])).float().to(device)
+        data1 = torch.from_numpy(generateData.sampleFromDomain(params["bodyBatch"])).float().to(device)
+        data2 = torch.from_numpy(generateData.sampleFromBoundary(params["bdryBatch"])).float().to(device)
 
-            data1_x_shift = data1+x_shift
-            data1_y_shift = data1+y_shift
+        data1_x_shift = data1+x_shift
+        data1_y_shift = data1+y_shift
 
         loss.backward()
 
@@ -178,8 +178,8 @@ def main():
     # params["radius"] = 1
     params["d"] = 2 # 2D
     params["dd"] = 1 # Scalar field
-    params["bodyBatch"] = 256 # Batch size
-    params["bdryBatch"] = 256 # Batch size for the boundary integral
+    params["bodyBatch"] = 128 # Batch size
+    params["bdryBatch"] = 128 # Batch size for the boundary integral
     params["lr"] = 0.01 # Learning rate
     params["preLr"] = 0.01 # Learning rate (Pre-training)
     params["width"] = 8 # Width of layers

@@ -133,19 +133,19 @@ def train(model,device,params,optimizer,scheduler):
             file = open("lossData.txt","a")
             file.write(str(step+params["preStep"]+1)+" "+str(error)+"\n")
 
-            data1 = torch.from_numpy(generateData.sampleFromDisk10(params["radius"],params["bodyBatch"])).float().to(device)
-            data2 = torch.from_numpy(generateData.sampleFromSurface10(params["radius"],params["bdryBatch"])).float().to(device)
+        data1 = torch.from_numpy(generateData.sampleFromDisk10(params["radius"],params["bodyBatch"])).float().to(device)
+        data2 = torch.from_numpy(generateData.sampleFromSurface10(params["radius"],params["bdryBatch"])).float().to(device)
 
-            data1_shift0 = data1+x_shift[0]
-            data1_shift1 = data1+x_shift[1]
-            data1_shift2 = data1+x_shift[2]
-            data1_shift3 = data1+x_shift[3]
-            data1_shift4 = data1+x_shift[4]
-            data1_shift5 = data1+x_shift[5]
-            data1_shift6 = data1+x_shift[6]
-            data1_shift7 = data1+x_shift[7]
-            data1_shift8 = data1+x_shift[8]
-            data1_shift9 = data1+x_shift[9]
+        data1_shift0 = data1+x_shift[0]
+        data1_shift1 = data1+x_shift[1]
+        data1_shift2 = data1+x_shift[2]
+        data1_shift3 = data1+x_shift[3]
+        data1_shift4 = data1+x_shift[4]
+        data1_shift5 = data1+x_shift[5]
+        data1_shift6 = data1+x_shift[6]
+        data1_shift7 = data1+x_shift[7]
+        data1_shift8 = data1+x_shift[8]
+        data1_shift9 = data1+x_shift[9]
 
         loss.backward()
 
@@ -211,11 +211,11 @@ def main():
     params["radius"] = 1
     params["d"] = 10 # 10D
     params["dd"] = 1 # Scalar field
-    params["bodyBatch"] = 512 # Batch size
-    params["bdryBatch"] = 512 # Batch size for the boundary integral
+    params["bodyBatch"] = 128 # Batch size
+    params["bdryBatch"] = 128 # Batch size for the boundary integral
     params["lr"] = 0.01 # Learning rate
     params["preLr"] = 0.01 # Learning rate (Pre-training)
-    params["width"] = 16 # Width of layers
+    params["width"] = 20 # Width of layers
     params["depth"] = 6 # Depth of the network: depth+2
     params["numQuad"] = 40000 # Number of quadrature points for testing
     params["trainStep"] = 50000
