@@ -25,13 +25,15 @@ class RitzNet(torch.nn.Module):
         #     x_temp = F.relu(layer(x))
         #     x = x_temp+x
         
-        # x = F.softplus(self.linearIn(x)) # Match dimension
+        # x = torch.tanh(self.linearIn(x)) # Match dimension
         for layer in self.linear:
             x_temp = F.softplus(layer(x))
             x = x_temp #+x
         # for i in range(len(self.linear)//2): # Use the network structure proposed in the paper.
-        #     x_temp = F.softplus(self.linear[2*i](x))
-        #     x_temp = F.softplus(self.linear[2*i+1](x_temp))
+        #     # x_temp = F.softplus(self.linear[2*i](x))
+        #     # x_temp = F.softplus(self.linear[2*i+1](x_temp))
+        #     x_temp = torch.tanh(self.linear[2*i](x))
+        #     x_temp = torch.tanh(self.linear[2*i+1](x_temp))
         #     x = x_temp+x
         
         return self.linearOut(x)
@@ -94,7 +96,7 @@ def train(model,device,params,optimizer,scheduler):
 
         # Loss function 1
         fTerm = ffun(data1).to(device)
-        loss1 = torch.mean((dfdx2+dfdy2+fTerm)**2) * math.pi*params["radius"]**2
+        loss1 = torch.mean((dfdx2+dfdy2+fTerm)*(dfdx2+dfdy2+fTerm)) * math.pi*params["radius"]**2
 
         # Loss function 2
         output2 = model(data2)
@@ -114,7 +116,7 @@ def train(model,device,params,optimizer,scheduler):
             with torch.no_grad():
                 target = exact(params["radius"],data1)
                 error = errorFun(output1,target,params)
-                print("Error at Step %s is %s."%(step+params["preStep"]+1,loss)) # error))
+                print("Error at Step %s is %s."%(step+params["preStep"]+1,error)) # loss
                 # params["penalty"] *= 1.01
             file = open("lossData.txt","a")
             file.write(str(step+params["preStep"]+1)+" "+str(error)+"\n")
@@ -162,22 +164,22 @@ def test(model,device,params):
 
 def ffun(data):
     # f = 4
-    # return 4.0*torch.ones([data.shape[0],1],dtype=torch.float)
+    return 4.0*torch.ones([data.shape[0],1],dtype=torch.float)
     # f = 0
-    return 0.0*torch.ones([data.shape[0],1],dtype=torch.float)
+    # return 0.0*torch.ones([data.shape[0],1],dtype=torch.float)
 
 def exact(r,data):
     # f = 4 ==> u = r^2-x^2-y^2
-    # output = r**2-torch.sum(data*data,dim=1)
+    output = r**2-torch.sum(data*data,dim=1)
     # f = 0 ==> u = x1*x2
-    output = data[:,0]*data[:,1]
+    # output = data[:,0]*data[:,1]
 
     return output.unsqueeze(1)
 
 def rough(r,data):
     # A rough guess
-    # output = r**2-r*torch.sum(data*data,dim=1)**0.5
-    output = torch.zeros(data.shape[0],dtype=torch.float)
+    output = r**2-r*torch.sum(data*data,dim=1)**0.5
+    # output = torch.zeros(data.shape[0],dtype=torch.float)
     return output.unsqueeze(1)
 
 def count_parameters(model):
@@ -192,17 +194,18 @@ def main():
     params["radius"] = 1
     params["d"] = 2 # 2D
     params["dd"] = 1 # Scalar field
-    params["bodyBatch"] = 1000 # Batch size
-    params["bdryBatch"] = 1000 # Batch size for the boundary integral
-    params["lr"] = 0.1 # Learning rate
+    params["bodyBatch"] = 256 # Batch size
+    params["bdryBatch"] = 256 # Batch size for the boundary integral
+    params["lr"] = 0.01 # Learning rate
     params["preLr"] = 0.01 # Learning rate (Pre-training)
     params["width"] = 8 # Width of layers
     params["depth"] = 2 # Depth of the network: depth+2
     params["numQuad"] = 40000 # Number of quadrature points for testing
     params["trainStep"] = 50000
-    params["penalty"] = 1
+    params["penalty"] = 1000
     params["preStep"] = 0
-    params["diff"] = 0.0001
+    params["diff"] = 0.001 # The step cannot be too small, otherwise the solution converges to zero. Analysis is still needed.
+                           # It is very likely due to round-off.
     params["writeStep"] = 50
     params["step_size"] = 5000
     params["gamma"] = 0.3
@@ -223,6 +226,7 @@ def main():
     model.eval()
     testError = test(model,device,params)
     print("The test error (of the last model) is %s."%testError)
+    print("The number of parameters is %s,"%count_parameters(model))
 
     torch.save(model.state_dict(),"last_model.pt")
 

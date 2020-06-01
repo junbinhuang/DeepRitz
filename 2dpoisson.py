@@ -178,8 +178,8 @@ def main():
     params["radius"] = 1
     params["d"] = 2 # 2D
     params["dd"] = 1 # Scalar field
-    params["bodyBatch"] = 1000 # Batch size
-    params["bdryBatch"] = 1000 # Batch size for the boundary integral
+    params["bodyBatch"] = 256 # Batch size
+    params["bdryBatch"] = 256 # Batch size for the boundary integral
     params["lr"] = 0.01 # Learning rate
     params["preLr"] = 0.01 # Learning rate (Pre-training)
     params["width"] = 8 # Width of layers
@@ -209,6 +209,7 @@ def main():
     model.eval()
     testError = test(model,device,params)
     print("The test error (of the last model) is %s."%testError)
+    print("The number of parameters is %s,"%count_parameters(model))
 
     torch.save(model.state_dict(),"last_model.pt")
 
