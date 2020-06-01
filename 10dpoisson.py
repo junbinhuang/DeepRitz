@@ -24,7 +24,7 @@ class RitzNet(torch.nn.Module):
         x = F.softplus(self.linearIn(x)) # Match dimension
         for layer in self.linear: # Is ResNets really needed?
             x_temp = F.softplus(layer(x))
-            x = x_temp #+x
+            x = x_temp+x
         # for i in range(len(self.linear)//2): # Use the network structure proposed in the paper.
         #     x_temp = F.softplus(self.linear[2*i](x))
         #     x_temp = F.softplus(self.linear[2*i+1](x_temp))
@@ -215,8 +215,8 @@ def main():
     params["bdryBatch"] = 512 # Batch size for the boundary integral
     params["lr"] = 0.01 # Learning rate
     params["preLr"] = 0.01 # Learning rate (Pre-training)
-    params["width"] = 20 # Width of layers
-    params["depth"] = 4 # Depth of the network: depth+2
+    params["width"] = 16 # Width of layers
+    params["depth"] = 6 # Depth of the network: depth+2
     params["numQuad"] = 40000 # Number of quadrature points for testing
     params["trainStep"] = 50000
     params["penalty"] = 500

@@ -28,7 +28,7 @@ class RitzNet(torch.nn.Module):
         # x = torch.tanh(self.linearIn(x)) # Match dimension
         for layer in self.linear:
             x_temp = F.softplus(layer(x))
-            x = x_temp #+x
+            x = x_temp+x
         # for i in range(len(self.linear)//2): # Use the network structure proposed in the paper.
         #     # x_temp = F.softplus(self.linear[2*i](x))
         #     # x_temp = F.softplus(self.linear[2*i+1](x_temp))
@@ -202,7 +202,7 @@ def main():
     params["depth"] = 2 # Depth of the network: depth+2
     params["numQuad"] = 40000 # Number of quadrature points for testing
     params["trainStep"] = 50000
-    params["penalty"] = 1000
+    params["penalty"] = 500
     params["preStep"] = 0
     params["diff"] = 0.001 # The step cannot be too small, otherwise the solution converges to zero. Analysis is still needed.
                            # It is very likely due to round-off.

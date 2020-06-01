@@ -28,7 +28,7 @@ class RitzNet(torch.nn.Module):
         x = F.softplus(self.linearIn(x)) # Match dimension
         for layer in self.linear:
             x_temp = F.softplus(layer(x))
-            x = x_temp #+x
+            x = x_temp+x
         # for i in range(len(self.linear)//2): # Use the network structure proposed in the paper.
         #     x_temp = F.softplus(self.linear[2*i](x))
         #     x_temp = F.softplus(self.linear[2*i+1](x_temp))
