@@ -1,4 +1,29 @@
 %% Read data from the Python outputs.
+fid = fopen('lossData.txt');
+data = textscan(fid, '%d %f', 'CommentStyle','#', 'CollectOutput',true);
+fclose(fid);
+lossData_itr = data{1,1};
+lossData_err = data{1,2};
+
+% fid = fopen('lossData1.txt');
+% data = textscan(fid, '%d %f', 'CommentStyle','#', 'CollectOutput',true);
+% fclose(fid);
+% lossData_itr1 = data{1,1};
+% lossData_err1 = data{1,2};
+
+%% Plot the error curve
+figure
+semilogy(lossData_itr,lossData_err,'b-','LineWidth',1.0)
+ylabel('Error','Interpreter','latex')
+xlabel('Iterations','Interpreter','latex')
+ylim([0.03,1])
+% legend({'No pre-training'},'Interpreter','latex')
+set(gca,'ticklabelinterpreter','latex','fontsize',11)
+hold on
+% semilogy(lossData_itr1,lossData_err1,'r-','LineWidth',1.5)
+% legend({'No pretraining','Pretraining'},'Interpreter','latex')
+
+%% Now we can start plotting figures.
 fid=fopen('nSample.txt');
 data = textscan(fid, '%d', 'CommentStyle','#', 'CollectOutput',true);
 fclose(fid);
@@ -26,33 +51,8 @@ data = textscan(fid, a, 'CommentStyle','#', 'CollectOutput',true);
 fclose(fid);
 totalData=cell2mat(data);
 
-fid = fopen('lossData.txt');
-data = textscan(fid, '%d %f', 'CommentStyle','#', 'CollectOutput',true);
-fclose(fid);
-lossData_itr = data{1,1};
-lossData_err = data{1,2};
-
-% fid = fopen('lossData1.txt');
-% data = textscan(fid, '%d %f', 'CommentStyle','#', 'CollectOutput',true);
-% fclose(fid);
-% lossData_itr1 = data{1,1};
-% lossData_err1 = data{1,2};
-
 clear data numbers a
 
-%% Plot the error curve
-figure
-semilogy(lossData_itr,lossData_err,'b-','LineWidth',1.5)
-ylabel('$\log_{10}$(error)','Interpreter','latex')
-xlabel('Iterations','Interpreter','latex')
-ylim([0.005,1])
-% legend({'No pre-training'},'Interpreter','latex')
-set(gca,'ticklabelinterpreter','latex','fontsize',16)
-hold on
-% semilogy(lossData_itr1,lossData_err1,'r-','LineWidth',1.5)
-% legend({'No pretraining','Pretraining'},'Interpreter','latex')
-
-%% Now we can start plotting figures.
 % Plot the boundary.
 figure
 hold on
@@ -111,7 +111,7 @@ clear plotData xArray yArray zArray scale nDomain xMin xMax yMin yMax zMin zMax.
 function myContourf(x,y,z,scale)
 %Used in visualization
     contourf(x,y,z,scale,'LineStyle','none');
-    set(gca,'ticklabelinterpreter','latex','fontsize',21)
+    set(gca,'ticklabelinterpreter','latex','fontsize',11)
     colormap(jet);
     colorbar('ticklabelinterpreter','latex')
 end

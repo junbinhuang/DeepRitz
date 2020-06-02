@@ -28,7 +28,7 @@ class RitzNet(torch.nn.Module):
         # x = torch.tanh(self.linearIn(x)) # Match dimension
         for layer in self.linear:
             x_temp = F.softplus(layer(x))
-            x = x_temp+x
+            x = x_temp #+x
         # for i in range(len(self.linear)//2): # Use the network structure proposed in the paper.
         #     # x_temp = F.softplus(self.linear[2*i](x))
         #     # x_temp = F.softplus(self.linear[2*i+1](x_temp))
@@ -57,6 +57,7 @@ def preTrain(model,device,params,preOptimizer,preScheduler,fun):
             with torch.no_grad():
                 ref = exact(params["radius"],data)
                 error = errorFun(output,ref,params)
+                print("Loss at Step %s is %s."%(step+1,loss.item()))
                 print("Error at Step %s is %s."%(step+1,error))
             file.write(str(step+1)+" "+str(error)+"\n")
 
@@ -116,18 +117,19 @@ def train(model,device,params,optimizer,scheduler):
             with torch.no_grad():
                 target = exact(params["radius"],data1)
                 error = errorFun(output1,target,params)
+                print("Loss at Step %s is %s."%(step+params["preStep"]+1,loss.item()))
                 print("Error at Step %s is %s."%(step+params["preStep"]+1,error)) # loss
                 # params["penalty"] *= 1.01
             file = open("lossData.txt","a")
             file.write(str(step+params["preStep"]+1)+" "+str(error)+"\n")
 
-        data1 = torch.from_numpy(generateData.sampleFromDisk(params["radius"],params["bodyBatch"])).float().to(device)
-        data2 = torch.from_numpy(generateData.sampleFromSurface(params["radius"],params["bdryBatch"])).float().to(device)
+            data1 = torch.from_numpy(generateData.sampleFromDisk(params["radius"],params["bodyBatch"])).float().to(device)
+            data2 = torch.from_numpy(generateData.sampleFromSurface(params["radius"],params["bdryBatch"])).float().to(device)
 
-        data1_x_shift = data1+x_shift
-        data1_y_shift = data1+y_shift
-        data1_x_nshift = data1-x_shift
-        data1_y_nshift = data1-y_shift
+            data1_x_shift = data1+x_shift
+            data1_y_shift = data1+y_shift
+            data1_x_nshift = data1-x_shift
+            data1_y_nshift = data1-y_shift
 
         loss.backward()
 
@@ -194,8 +196,8 @@ def main():
     params["radius"] = 1
     params["d"] = 2 # 2D
     params["dd"] = 1 # Scalar field
-    params["bodyBatch"] = 128 # Batch size
-    params["bdryBatch"] = 128 # Batch size for the boundary integral
+    params["bodyBatch"] = 1024 # Batch size
+    params["bdryBatch"] = 1024 # Batch size for the boundary integral
     params["lr"] = 0.01 # Learning rate
     params["preLr"] = 0.01 # Learning rate (Pre-training)
     params["width"] = 8 # Width of layers

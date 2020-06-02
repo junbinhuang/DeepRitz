@@ -1,8 +1,8 @@
-# DeepRitz
+# DeepRitz&ls
 
-## Implementation of the Deep Ritz method
+## Implementation of the Deep Ritz method and the Least Square method
 
-Three problems are solved using the Deep Ritz method, see 2dpoisson.py, 2dpoisson-hole.py, and 10dpoisson.py. One problem is solved using the least square functional, see 2dpoisson-ls.py.
+Three problems are solved using the Deep Ritz method, see 2dpoisson.py, 2dpoisson-hole.py, and 10dpoisson.py. Three problems are solved using the least square functional, see 2dpoisson-ls.py, 2dpoisson-hole-ls.py, and 10dpoisson-ls.py.
 
 ## Dependencies
 
