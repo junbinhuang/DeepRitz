@@ -20,19 +20,10 @@ class RitzNet(torch.nn.Module):
         self.linearOut = nn.Linear(self.params["width"], self.params["dd"])
 
     def forward(self, x):
-        # x = self.linearIn(x) # Match dimension
-        # for layer in self.linear:
-        #     x_temp = F.relu(layer(x))
-        #     x = x_temp+x
-        
-        x = F.softplus(self.linearIn(x)) # Match dimension
+        x = torch.tanh(self.linearIn(x)) # Match dimension
         for layer in self.linear:
-            x_temp = F.softplus(layer(x))
-            x = x_temp #+x
-        # for i in range(len(self.linear)//2): # Use the network structure proposed in the paper.
-        #     x_temp = F.softplus(self.linear[2*i](x))
-        #     x_temp = F.softplus(self.linear[2*i+1](x_temp))
-        #     x = x_temp+x
+            x_temp = torch.tanh(layer(x))
+            x = x_temp
         
         return self.linearOut(x)
 
@@ -122,6 +113,9 @@ def train(model,device,params,optimizer,scheduler):
             data1_x_shift = data1+x_shift
             data1_y_shift = data1+y_shift
 
+        if 10*(step+1)%params["trainStep"] == 0:
+            print("%s%% finished..."%(100*(step+1)//params["trainStep"]))
+
         loss.backward()
 
         # Update the weights.
@@ -175,7 +169,7 @@ def count_parameters(model):
 
 def main():
     # Parameters
-    torch.manual_seed(21)
+    # torch.manual_seed(21)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     params = dict()

@@ -1,7 +1,7 @@
 import numpy as np 
 import math, torch, generateData, time
 import torch.nn.functional as F
-from torch.optim.lr_scheduler import MultiStepLR, StepLR
+from torch.optim.lr_scheduler import MultiStepLR, StepLR, MultiplicativeLR
 import torch.nn as nn
 import matplotlib.pyplot as plt
 import sys, os
@@ -21,15 +21,11 @@ class RitzNet(torch.nn.Module):
         self.linearOut = nn.Linear(self.params["width"], self.params["dd"])
 
     def forward(self, x):
-        # x = F.softplus(self.linearIn(x)) # Match dimension
-        # # x = torch.tanh(self.linearIn(x)) # Match dimension
-        for layer in self.linear: # Is ResNets really needed?
+        # x = torch.tanh(self.linearIn(x)) # Match dimension
+        for layer in self.linear:
             x_temp = F.softplus(layer(x))
             x = x_temp+x
-        # for layer in self.linear: # Is ResNets really needed?
-        #     x_temp = torch.tanh(layer(x))
-        #     x = x_temp+x
-        # for i in range(len(self.linear)//2): # Use the network structure proposed in the paper.
+        # for i in range(len(self.linear)//2):
         #     x_temp = torch.tanh(self.linear[2*i](x))
         #     x_temp = torch.tanh(self.linear[2*i+1](x_temp))
         #     x = x_temp+x
@@ -38,8 +34,9 @@ class RitzNet(torch.nn.Module):
 
 def initWeights(m):
     if type(m) == nn.Linear:
-        torch.nn.init.kaiming_normal_(m.weight)
-        m.bias.data.fill_(0.01)
+        torch.nn.init.xavier_normal_(m.weight)
+        # m.bias.data.fill_(0.01)
+        torch.nn.init.zeros_(m.bias)
 
 def preTrain(model,device,params,preOptimizer,preScheduler,fun):
     model.train()
@@ -159,6 +156,9 @@ def train(model,device,params,optimizer,scheduler):
             data1_shift8 = data1+x_shift[8]
             data1_shift9 = data1+x_shift[9]
 
+        if 10*(step+1)%params["trainStep"] == 0:
+            print("%s%% finished..."%(100*(step+1)//params["trainStep"]))
+
         loss.backward()
 
         # Update the weights.
@@ -240,17 +240,19 @@ def main():
     params["step_size"] = 5000
     params["milestone"] = [5000,10000,20000,35000,48000]
     params["gamma"] = 0.5
-    params["decay"] = 0.00001
+    params["decay"] = 0.0001
 
     startTime = time.time()
     model = RitzNet(params).to(device)
-    model.apply(initWeights)
+    # model.apply(initWeights)
     print("Generating network costs %s seconds."%(time.time()-startTime))
 
     preOptimizer = torch.optim.Adam(model.parameters(),lr=params["preLr"])
     optimizer = torch.optim.Adam(model.parameters(),lr=params["lr"],weight_decay=params["decay"])
     # scheduler = StepLR(optimizer,step_size=params["step_size"],gamma=params["gamma"])
     scheduler = MultiStepLR(optimizer,milestones=params["milestone"],gamma=params["gamma"])
+    # schedulerFun = lambda epoch: ((epoch+100)/(epoch+101))
+    # scheduler = MultiplicativeLR(optimizer,lr_lambda=schedulerFun)
 
     startTime = time.time()
     preTrain(model,device,params,preOptimizer,None,rough)

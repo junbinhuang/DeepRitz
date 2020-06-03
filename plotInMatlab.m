@@ -1,9 +1,9 @@
 %% Read data from the Python outputs.
-fid = fopen('lossData.txt');
+fid = fopen('lossData0.txt');
 data = textscan(fid, '%d %f', 'CommentStyle','#', 'CollectOutput',true);
 fclose(fid);
 lossData_itr = data{1,1}';
-lossData = zeros(5,length(loss));
+lossData = zeros(5,length(lossData_itr));
 lossData(1,:) = data{1,2}';
 
 fid = fopen('lossData1.txt');
@@ -27,21 +27,30 @@ fclose(fid);
 lossData(5,:) = data{1,2}';
 
 %% Plot the error curve
-lossData_err = mean(lossData);
-lossData_err_std = std(lossData);
+% if size(lossData,2) > 500
+%     lossData = lossData(:,10:10:end);
+%     lossData_itr = lossData_itr(:,10:10:end);
+% end
+logLossData = log10(lossData);
+lossData_err = mean(logLossData);
+lossData_err_std = std(logLossData);
 lossData_err1 = lossData_err-lossData_err_std;
 lossData_err2 = lossData_err+lossData_err_std;
+lossData_err = 10.^lossData_err;
+lossData_err1 = 10.^lossData_err1;
+lossData_err2 = 10.^lossData_err2;
+
 figure
 semilogy(lossData_itr,lossData_err,'b-','LineWidth',1.0)
 hold on
 XX = [lossData_itr, fliplr(lossData_itr)];
 YY = [lossData_err1, fliplr(lossData_err2)];
 theFill = fill(XX,YY,'b');
-set(theFill,'facealpha',0.2,'edgecolor','b','edgealpha',0.1)
+set(theFill,'facealpha',0.2,'edgecolor','b','edgealpha',0.0)
 
 ylabel('Error','Interpreter','latex')
 xlabel('Iterations','Interpreter','latex')
-ylim([0.005,1])
+% ylim([0.005,1])
 % legend({'No pre-training'},'Interpreter','latex')
 set(gca,'ticklabelinterpreter','latex','fontsize',11)
 
