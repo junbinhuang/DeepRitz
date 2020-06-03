@@ -2,26 +2,48 @@
 fid = fopen('lossData.txt');
 data = textscan(fid, '%d %f', 'CommentStyle','#', 'CollectOutput',true);
 fclose(fid);
-lossData_itr = data{1,1};
-lossData_err = data{1,2};
+lossData_itr = data{1,1}';
+lossData = zeros(5,length(loss));
+lossData(1,:) = data{1,2}';
 
-% fid = fopen('lossData1.txt');
-% data = textscan(fid, '%d %f', 'CommentStyle','#', 'CollectOutput',true);
-% fclose(fid);
-% lossData_itr1 = data{1,1};
-% lossData_err1 = data{1,2};
+fid = fopen('lossData1.txt');
+data = textscan(fid, '%d %f', 'CommentStyle','#', 'CollectOutput',true);
+fclose(fid);
+lossData(2,:) = data{1,2}';
+
+fid = fopen('lossData2.txt');
+data = textscan(fid, '%d %f', 'CommentStyle','#', 'CollectOutput',true);
+fclose(fid);
+lossData(3,:) = data{1,2}';
+
+fid = fopen('lossData3.txt');
+data = textscan(fid, '%d %f', 'CommentStyle','#', 'CollectOutput',true);
+fclose(fid);
+lossData(4,:) = data{1,2}';
+
+fid = fopen('lossData4.txt');
+data = textscan(fid, '%d %f', 'CommentStyle','#', 'CollectOutput',true);
+fclose(fid);
+lossData(5,:) = data{1,2}';
 
 %% Plot the error curve
+lossData_err = mean(lossData);
+lossData_err_std = std(lossData);
+lossData_err1 = lossData_err-lossData_err_std;
+lossData_err2 = lossData_err+lossData_err_std;
 figure
 semilogy(lossData_itr,lossData_err,'b-','LineWidth',1.0)
+hold on
+XX = [lossData_itr, fliplr(lossData_itr)];
+YY = [lossData_err1, fliplr(lossData_err2)];
+theFill = fill(XX,YY,'b');
+set(theFill,'facealpha',0.2,'edgecolor','b','edgealpha',0.1)
+
 ylabel('Error','Interpreter','latex')
 xlabel('Iterations','Interpreter','latex')
-ylim([0.03,1])
+ylim([0.005,1])
 % legend({'No pre-training'},'Interpreter','latex')
 set(gca,'ticklabelinterpreter','latex','fontsize',11)
-hold on
-% semilogy(lossData_itr1,lossData_err1,'r-','LineWidth',1.5)
-% legend({'No pretraining','Pretraining'},'Interpreter','latex')
 
 %% Now we can start plotting figures.
 fid=fopen('nSample.txt');

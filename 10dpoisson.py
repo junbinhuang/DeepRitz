@@ -13,7 +13,7 @@ class RitzNet(torch.nn.Module):
     def __init__(self, params):
         super(RitzNet, self).__init__()
         self.params = params
-        self.linearIn = nn.Linear(self.params["d"], self.params["width"])
+        # self.linearIn = nn.Linear(self.params["d"], self.params["width"])
         self.linear = nn.ModuleList()
         for _ in range(params["depth"]):
             self.linear.append(nn.Linear(self.params["width"], self.params["width"]))
@@ -21,16 +21,25 @@ class RitzNet(torch.nn.Module):
         self.linearOut = nn.Linear(self.params["width"], self.params["dd"])
 
     def forward(self, x):
-        x = F.softplus(self.linearIn(x)) # Match dimension
+        # x = F.softplus(self.linearIn(x)) # Match dimension
+        # # x = torch.tanh(self.linearIn(x)) # Match dimension
         for layer in self.linear: # Is ResNets really needed?
             x_temp = F.softplus(layer(x))
             x = x_temp+x
+        # for layer in self.linear: # Is ResNets really needed?
+        #     x_temp = torch.tanh(layer(x))
+        #     x = x_temp+x
         # for i in range(len(self.linear)//2): # Use the network structure proposed in the paper.
-        #     x_temp = F.softplus(self.linear[2*i](x))
-        #     x_temp = F.softplus(self.linear[2*i+1](x_temp))
+        #     x_temp = torch.tanh(self.linear[2*i](x))
+        #     x_temp = torch.tanh(self.linear[2*i+1](x_temp))
         #     x = x_temp+x
         
         return self.linearOut(x)
+
+def initWeights(m):
+    if type(m) == nn.Linear:
+        torch.nn.init.kaiming_normal_(m.weight)
+        m.bias.data.fill_(0.01)
 
 def preTrain(model,device,params,preOptimizer,preScheduler,fun):
     model.train()
@@ -51,6 +60,7 @@ def preTrain(model,device,params,preOptimizer,preScheduler,fun):
             with torch.no_grad():
                 ref = exact(params["radius"],data)
                 error = errorFun(output,ref,params)
+                # print("Loss at Step %s is %s."%(step+1,loss.item()))
                 print("Error at Step %s is %s."%(step+1,error))
             file.write(str(step+1)+" "+str(error)+"\n")
 
@@ -128,32 +138,34 @@ def train(model,device,params,optimizer,scheduler):
             with torch.no_grad():
                 target = exact(params["radius"],data1)
                 error = errorFun(output1,target,params)
+                # print("Loss at Step %s is %s."%(step+params["preStep"]+1,loss.item()))
                 print("Error at Step %s is %s."%(step+params["preStep"]+1,error))
                 # params["penalty"] *= 1.01
             file = open("lossData.txt","a")
             file.write(str(step+params["preStep"]+1)+" "+str(error)+"\n")
 
-        data1 = torch.from_numpy(generateData.sampleFromDisk10(params["radius"],params["bodyBatch"])).float().to(device)
-        data2 = torch.from_numpy(generateData.sampleFromSurface10(params["radius"],params["bdryBatch"])).float().to(device)
+        if step%params["sampleStep"] == params["sampleStep"]-1:
+            data1 = torch.from_numpy(generateData.sampleFromDisk10(params["radius"],params["bodyBatch"])).float().to(device)
+            data2 = torch.from_numpy(generateData.sampleFromSurface10(params["radius"],params["bdryBatch"])).float().to(device)
 
-        data1_shift0 = data1+x_shift[0]
-        data1_shift1 = data1+x_shift[1]
-        data1_shift2 = data1+x_shift[2]
-        data1_shift3 = data1+x_shift[3]
-        data1_shift4 = data1+x_shift[4]
-        data1_shift5 = data1+x_shift[5]
-        data1_shift6 = data1+x_shift[6]
-        data1_shift7 = data1+x_shift[7]
-        data1_shift8 = data1+x_shift[8]
-        data1_shift9 = data1+x_shift[9]
+            data1_shift0 = data1+x_shift[0]
+            data1_shift1 = data1+x_shift[1]
+            data1_shift2 = data1+x_shift[2]
+            data1_shift3 = data1+x_shift[3]
+            data1_shift4 = data1+x_shift[4]
+            data1_shift5 = data1+x_shift[5]
+            data1_shift6 = data1+x_shift[6]
+            data1_shift7 = data1+x_shift[7]
+            data1_shift8 = data1+x_shift[8]
+            data1_shift9 = data1+x_shift[9]
 
         loss.backward()
 
         # Update the weights.
-        # if step == 10000: 
+        # if step == 20000: 
         #     params["bdryBatch"] *= 2
         #     params["bodyBatch"] *= 2
-        # if step == 20000: 
+        # if step == 40000: 
         #     params["bdryBatch"] *= 2
         #     params["bodyBatch"] *= 2
 
@@ -211,29 +223,34 @@ def main():
     params["radius"] = 1
     params["d"] = 10 # 10D
     params["dd"] = 1 # Scalar field
-    params["bodyBatch"] = 128 # Batch size
-    params["bdryBatch"] = 128 # Batch size for the boundary integral
-    params["lr"] = 0.01 # Learning rate
-    params["preLr"] = 0.01 # Learning rate (Pre-training)
-    params["width"] = 20 # Width of layers
-    params["depth"] = 6 # Depth of the network: depth+2
+    params["bodyBatch"] = 1024 # Batch size
+    params["bdryBatch"] = 2048 # Batch size for the boundary integral
+    params["lr"] = 0.016 # Learning rate
+    params["preLr"] = params["lr"] # Learning rate (Pre-training)
+    params["width"] = 10 # Width of layers
+    params["depth"] = 4 # Depth of the network: depth+2
     params["numQuad"] = 40000 # Number of quadrature points for testing
     params["trainStep"] = 50000
     params["penalty"] = 500
     params["preStep"] = 0
-    params["diff"] = 0.0001
+    params["diff"] = 0.001
     params["writeStep"] = 50
+    params["sampleStep"] = 10
     params["area"] = areaVolume(params["radius"],params["d"])
     params["step_size"] = 5000
-    params["gamma"] = 0.3
+    params["milestone"] = [5000,10000,20000,35000,48000]
+    params["gamma"] = 0.5
+    params["decay"] = 0.00001
 
     startTime = time.time()
     model = RitzNet(params).to(device)
+    model.apply(initWeights)
     print("Generating network costs %s seconds."%(time.time()-startTime))
 
     preOptimizer = torch.optim.Adam(model.parameters(),lr=params["preLr"])
-    optimizer = torch.optim.Adam(model.parameters(),lr=params["lr"])
-    scheduler = StepLR(optimizer,step_size=params["step_size"],gamma=params["gamma"])
+    optimizer = torch.optim.Adam(model.parameters(),lr=params["lr"],weight_decay=params["decay"])
+    # scheduler = StepLR(optimizer,step_size=params["step_size"],gamma=params["gamma"])
+    scheduler = MultiStepLR(optimizer,milestones=params["milestone"],gamma=params["gamma"])
 
     startTime = time.time()
     preTrain(model,device,params,preOptimizer,None,rough)

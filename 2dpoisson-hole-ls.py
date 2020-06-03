@@ -55,7 +55,7 @@ def preTrain(model,device,params,preOptimizer,preScheduler,fun):
             with torch.no_grad():
                 ref = exact(data)
                 error = errorFun(output,ref,params)
-                print("Loss at Step %s is %s."%(step+1,loss.item()))
+                # print("Loss at Step %s is %s."%(step+1,loss.item()))
                 print("Error at Step %s is %s."%(step+1,error))
             file.write(str(step+1)+" "+str(error)+"\n")
 
@@ -114,12 +114,13 @@ def train(model,device,params,optimizer,scheduler):
             with torch.no_grad():
                 target = exact(data1)
                 error = errorFun(output1,target,params)
-                print("Loss at Step %s is %s."%(step+params["preStep"]+1,loss.item()))
+                # print("Loss at Step %s is %s."%(step+params["preStep"]+1,loss.item()))
                 print("Error at Step %s is %s."%(step+params["preStep"]+1,error))
                 # params["penalty"] *= 1.01
             file = open("lossData.txt","a")
             file.write(str(step+params["preStep"]+1)+" "+str(error)+"\n")
 
+        if step%params["sampleStep"] == params["sampleStep"]-1:
             data1 = torch.from_numpy(generateData.sampleFromDomain(params["bodyBatch"])).float().to(device)
             data2 = torch.from_numpy(generateData.sampleFromBoundary(params["bdryBatch"])).float().to(device)
 
@@ -199,15 +200,17 @@ def main():
     params["preStep"] = 0
     params["diff"] = 0.001
     params["writeStep"] = 50
+    params["sampleStep"] = 10
     params["step_size"] = 5000
     params["gamma"] = 0.3
+    params["decay"] = 0.00001
 
     startTime = time.time()
     model = RitzNet(params).to(device)
     print("Generating network costs %s seconds."%(time.time()-startTime))
 
     preOptimizer = torch.optim.Adam(model.parameters(),lr=params["preLr"])
-    optimizer = torch.optim.Adam(model.parameters(),lr=params["lr"])
+    optimizer = torch.optim.Adam(model.parameters(),lr=params["lr"],weight_decay=params["decay"])
     scheduler = StepLR(optimizer,step_size=params["step_size"],gamma=params["gamma"])
 
     startTime = time.time()
