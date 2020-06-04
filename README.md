@@ -2,7 +2,7 @@
 
 ## Implementation of the Deep Ritz method and the Deep Galerkin method
 
-Four problems are solved using the Deep Ritz method, see 2dpoisson.py, 2dpoisson-hole.py, 10dpoisson-cube.py, and 10dpoisson.py. Four problems are solved using least square functionals, see 2dpoisson-ls.py, 2dpoisson-hole-ls.py, 10dpoisson-cube-ls.py, and 10dpoisson-ls.py.
+Four problems are solved using the Deep Ritz method, see 2dpoisson-autograd.py, 2dpoisson-hole-autograd.py, 10dpoisson-cube-autograd.py, and 10dpoisson-autograd.py. Four problems are solved using least square functionals, see 2dpoisson-ls-autograd.py, 2dpoisson-hole-ls-autograd.py, 10dpoisson-cube-ls-autograd.py, and 10dpoisson-ls-autograd.py.
 
 ## Dependencies
 

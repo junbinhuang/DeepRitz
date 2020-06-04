@@ -46,7 +46,7 @@ hold on
 XX = [lossData_itr, fliplr(lossData_itr)];
 YY = [lossData_err1, fliplr(lossData_err2)];
 theFill = fill(XX,YY,'b');
-set(theFill,'facealpha',0.2,'edgecolor','b','edgealpha',0.0)
+set(theFill,'facealpha',0.3,'edgecolor','b','edgealpha',0.0)
 
 ylabel('Error','Interpreter','latex')
 xlabel('Iterations','Interpreter','latex')
@@ -105,7 +105,7 @@ yMin=min(yArray(:));yMax=max(yArray(:));
 zMin=min(zArray(:));zMax=max(zArray(:));
     
 %% Set limits
-zMin=-1;
+zMin=0;
 zMax=1;
 %%
 
