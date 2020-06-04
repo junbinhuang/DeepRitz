@@ -125,3 +125,11 @@ dmypy.json
 .pyre/
 .vscode/
 *.pt
+
+# Some data files
+boundaryCoord.txt
+boundaryNumber.txt
+Data.txt
+last_model.pt
+lossData.txt
+nSample.txt
