@@ -21,7 +21,7 @@ class RitzNet(torch.nn.Module):
         self.linearOut = nn.Linear(self.params["width"], self.params["dd"])
 
     def forward(self, x):
-        # # x = torch.tanh(self.linearIn(x)) # Match dimension
+        # x = torch.tanh(self.linearIn(x)) # Match dimension
         for i in range(len(self.linear)//2):
             x_temp = torch.tanh(self.linear[2*i](x))
             x_temp = torch.tanh(self.linear[2*i+1](x_temp))
@@ -141,15 +141,7 @@ def train(model,device,params,optimizer,scheduler):
         output2 = model(data2)
         target2 = exact(params["radius"],data2)
         loss2 = torch.mean((output2-target2)*(output2-target2) * params["penalty"] *params["area"])
-        loss = loss1+loss2
-
-        # if step == 0:
-        #     torch.save(model.state_dict(),"best_model.pt")
-        #     last_loss = loss.item()
-        
-        # if loss.item()<last_loss-0.01*abs(last_loss):
-        #     torch.save(model.state_dict(),"best_model.pt")
-        #     last_loss = loss.item()                    
+        loss = loss1+loss2                
 
         if step%params["writeStep"] == params["writeStep"]-1:
             with torch.no_grad():
@@ -157,7 +149,6 @@ def train(model,device,params,optimizer,scheduler):
                 error = errorFun(output1,target,params)
                 # print("Loss at Step %s is %s."%(step+params["preStep"]+1,loss.item()))
                 print("Error at Step %s is %s."%(step+params["preStep"]+1,error))
-                # params["penalty"] *= 1.01
             file = open("lossData.txt","a")
             file.write(str(step+params["preStep"]+1)+" "+str(error)+"\n")
 
@@ -194,14 +185,6 @@ def train(model,device,params,optimizer,scheduler):
             print("%s%% finished..."%(100*(step+1)//params["trainStep"]))
 
         loss.backward()
-
-        # Update the weights.
-        # if step == 20000: 
-        #     params["bdryBatch"] *= 2
-        #     params["bodyBatch"] *= 2
-        # if step == 40000: 
-        #     params["bdryBatch"] *= 2
-        #     params["bodyBatch"] *= 2
 
         optimizer.step()
         scheduler.step()
@@ -298,13 +281,6 @@ def main():
     print("The number of parameters is %s,"%count_parameters(model))
 
     torch.save(model.state_dict(),"last_model.pt")
-
-    # model = RitzNet(params).to(device)
-    # model.load_state_dict(torch.load("last_model.pt"))
-    # model.eval()
-
-    # testError = test(model,device,params)
-    # print("The test error (of the saved model) is %s."%testError)
 
 if __name__=="__main__":
     main()

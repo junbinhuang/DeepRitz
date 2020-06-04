@@ -21,21 +21,16 @@ class RitzNet(torch.nn.Module):
         self.linearOut = nn.Linear(self.params["width"], self.params["dd"])
 
     def forward(self, x):
-        # x = torch.tanh(self.linearIn(x)) # Match dimension
+        # x = F.softplus(self.linearIn(x)) # Match dimension
         for layer in self.linear:
             x_temp = F.softplus(layer(x))
             x = x_temp+x
-        # for i in range(len(self.linear)//2):
-        #     x_temp = torch.tanh(self.linear[2*i](x))
-        #     x_temp = torch.tanh(self.linear[2*i+1](x_temp))
-        #     x = x_temp+x
         
         return self.linearOut(x)
 
 def initWeights(m):
     if type(m) == nn.Linear:
         torch.nn.init.xavier_normal_(m.weight)
-        # m.bias.data.fill_(0.01)
         torch.nn.init.zeros_(m.bias)
 
 def preTrain(model,device,params,preOptimizer,preScheduler,fun):
@@ -99,7 +94,7 @@ def train(model,device,params,optimizer,scheduler):
         output1_shift9 = model(data1_shift9)
 
         dfdx0 = (output1_shift0-output1)/params["diff"] # Use difference to approximate derivatives.
-        dfdx1 = (output1_shift1-output1)/params["diff"] # The PyTorch autograd is not very effective in this case.
+        dfdx1 = (output1_shift1-output1)/params["diff"] 
         dfdx2 = (output1_shift2-output1)/params["diff"]
         dfdx3 = (output1_shift3-output1)/params["diff"]
         dfdx4 = (output1_shift4-output1)/params["diff"]
@@ -121,15 +116,7 @@ def train(model,device,params,optimizer,scheduler):
         output2 = model(data2)
         target2 = exact(params["radius"],data2)
         loss2 = torch.mean((output2-target2)*(output2-target2) * params["penalty"] *params["area"])
-        loss = loss1+loss2
-
-        # if step == 0:
-        #     torch.save(model.state_dict(),"best_model.pt")
-        #     last_loss = loss.item()
-        
-        # if loss.item()<last_loss-0.01*abs(last_loss):
-        #     torch.save(model.state_dict(),"best_model.pt")
-        #     last_loss = loss.item()                    
+        loss = loss1+loss2                   
 
         if step%params["writeStep"] == params["writeStep"]-1:
             with torch.no_grad():
@@ -137,7 +124,6 @@ def train(model,device,params,optimizer,scheduler):
                 error = errorFun(output1,target,params)
                 # print("Loss at Step %s is %s."%(step+params["preStep"]+1,loss.item()))
                 print("Error at Step %s is %s."%(step+params["preStep"]+1,error))
-                # params["penalty"] *= 1.01
             file = open("lossData.txt","a")
             file.write(str(step+params["preStep"]+1)+" "+str(error)+"\n")
 
@@ -160,14 +146,6 @@ def train(model,device,params,optimizer,scheduler):
             print("%s%% finished..."%(100*(step+1)//params["trainStep"]))
 
         loss.backward()
-
-        # Update the weights.
-        # if step == 20000: 
-        #     params["bdryBatch"] *= 2
-        #     params["bodyBatch"] *= 2
-        # if step == 40000: 
-        #     params["bdryBatch"] *= 2
-        #     params["bodyBatch"] *= 2
 
         optimizer.step()
         scheduler.step()
@@ -265,13 +243,6 @@ def main():
     print("The number of parameters is %s,"%count_parameters(model))
 
     torch.save(model.state_dict(),"last_model.pt")
-
-    # model = RitzNet(params).to(device)
-    # model.load_state_dict(torch.load("last_model.pt"))
-    # model.eval()
-
-    # testError = test(model,device,params)
-    # print("The test error (of the saved model) is %s."%testError)
 
 if __name__=="__main__":
     main()

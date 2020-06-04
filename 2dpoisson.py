@@ -74,7 +74,7 @@ def train(model,device,params,optimizer,scheduler):
         output1_y_shift = model(data1_y_shift)
 
         dfdx = (output1_x_shift-output1)/params["diff"] # Use difference to approximate derivatives.
-        dfdy = (output1_y_shift-output1)/params["diff"] # The PyTorch autograd is not very effective in this case.
+        dfdy = (output1_y_shift-output1)/params["diff"] 
 
         model.zero_grad()
 
@@ -86,15 +86,7 @@ def train(model,device,params,optimizer,scheduler):
         output2 = model(data2)
         target2 = exact(params["radius"],data2)
         loss2 = torch.mean((output2-target2)*(output2-target2) * params["penalty"] * 2*math.pi*params["radius"])
-        loss = loss1+loss2
-
-        # if step == 0:
-        #     torch.save(model.state_dict(),"best_model.pt")
-        #     last_loss = loss.item()
-        
-        # if loss.item()<last_loss-0.01*abs(last_loss):
-        #     torch.save(model.state_dict(),"best_model.pt")
-        #     last_loss = loss.item()                    
+        loss = loss1+loss2                  
 
         if step%params["writeStep"] == params["writeStep"]-1:
             with torch.no_grad():
@@ -102,7 +94,6 @@ def train(model,device,params,optimizer,scheduler):
                 error = errorFun(output1,target,params)
                 # print("Loss at Step %s is %s."%(step+params["preStep"]+1,loss.item()))
                 print("Error at Step %s is %s."%(step+params["preStep"]+1,error))
-                # params["penalty"] *= 1.01
             file = open("lossData.txt","a")
             file.write(str(step+params["preStep"]+1)+" "+str(error)+"\n")
 
@@ -117,14 +108,6 @@ def train(model,device,params,optimizer,scheduler):
             print("%s%% finished..."%(100*(step+1)//params["trainStep"]))
 
         loss.backward()
-
-        # Update the weights.
-        # if step == 10000: 
-        #     params["bdryBatch"] *= 2
-        #     params["bodyBatch"] *= 2
-        # if step == 20000: 
-        #     params["bdryBatch"] *= 2
-        #     params["bodyBatch"] *= 2
 
         optimizer.step()
         scheduler.step()      
@@ -212,13 +195,6 @@ def main():
     print("The number of parameters is %s,"%count_parameters(model))
 
     torch.save(model.state_dict(),"last_model.pt")
-
-    # model = RitzNet(params).to(device)
-    # model.load_state_dict(torch.load("last_model.pt"))
-    # model.eval()
-
-    # testError = test(model,device,params)
-    # print("The test error (of the saved model) is %s."%testError)
 
     pltResult(model,device,100,params)
 
