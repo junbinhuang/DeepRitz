@@ -12,6 +12,6 @@ Four problems are solved using the Deep Ritz method, see 2dpoisson-autograd.py, 
 
 ## References
 
-* W E, B Yu. The Deep Ritz method: A deep learning-based numerical algorithm for solving variational problems. <em>Communications in Mathematics and Statistics</em> 2018, 6:1-12. [[journal]](https://link.springer.com/article/10.1007/s40304-018-0127-z)[[arXiv]](https://arxiv.org/abs/1710.00211)  
-* J Sirignano, K Spiliopoulos. DGM: A deep learning algorithm for solving partial differential equations. <em>Journal of Computational Physics</em> 2018, 375:1339–1364. [[journal]](https://www.sciencedirect.com/science/article/pii/S0021999118305527)[[arXiv]](https://arxiv.org/abs/1708.07469)  
-* Y Liao, P Ming. Deep Nitsche method: Deep Ritz method with essential boundary conditions. 2019. [[arXiv]](https://arxiv.org/abs/1912.01309)
+[1] W E, B Yu. The Deep Ritz method: A deep learning-based numerical algorithm for solving variational problems. <em>Communications in Mathematics and Statistics</em> 2018, 6:1-12. [[journal]](https://link.springer.com/article/10.1007/s40304-018-0127-z)[[arXiv]](https://arxiv.org/abs/1710.00211)  
+[2] J Sirignano, K Spiliopoulos. DGM: A deep learning algorithm for solving partial differential equations. <em>Journal of Computational Physics</em> 2018, 375:1339–1364. [[journal]](https://www.sciencedirect.com/science/article/pii/S0021999118305527)[[arXiv]](https://arxiv.org/abs/1708.07469)  
+[3] Y Liao, P Ming. Deep Nitsche method: Deep Ritz method with essential boundary conditions. 2019. [[arXiv]](https://arxiv.org/abs/1912.01309)
